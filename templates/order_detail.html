@@ -1,0 +1,76 @@
+<!-- templates/order_detail.html -->
+{% extends "base.html" %}
+{% block title %}Заказ #{{ order.id }} — ShopFlask{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Заказ #{{ order.id }}</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">Товары в заказе</div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Цена</th>
+                            <th>Кол-во</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('product_detail', product_id=item.product_id) }}">
+                                    {{ item.product.name }}
+                                </a>
+                            </td>
+                            <td>{{ "%.2f"|format(item.price) }} ₽</td>
+                            <td>{{ item.quantity }}</td>
+                            <td class="fw-bold">{{ "%.2f"|format(item.subtotal) }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-warning">
+                            <td colspan="3" class="text-end fw-bold">Итого:</td>
+                            <td class="fw-bold">{{ "%.2f"|format(order.total) }} ₽</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Информация о заказе</div>
+            <div class="card-body">
+                <p><strong>Дата:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><strong>Статус:</strong>
+                    {% if order.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="badge bg-success">{{ order.status_label }}</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge bg-danger">{{ order.status_label }}</span>
+                    {% else %}
+                        <span class="badge bg-info">{{ order.status_label }}</span>
+                    {% endif %}
+                </p>
+                <p><strong>Адрес:</strong> {{ order.address }}</p>
+                <p><strong>Телефон:</strong> {{ order.phone }}</p>
+                {% if order.comment %}
+                <p><strong>Комментарий:</strong> {{ order.comment }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary mt-3">
+    <i class="bi bi-arrow-left"></i> К списку заказов
+</a>
+{% endblock %}

@@ -1,0 +1,72 @@
+<!-- templates/admin_orders.html -->
+{% extends "base.html" %}
+{% block title %}Заказы — ShopFlask{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-bag"></i> Управление заказами</h2>
+
+<!-- Фильтр по статусу -->
+<div class="mb-3">
+    <div class="btn-group">
+        <a href="{{ url_for('admin_orders') }}"
+           class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">Все</a>
+        <a href="{{ url_for('admin_orders', status='pending') }}"
+           class="btn btn-sm {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">Ожидают</a>
+        <a href="{{ url_for('admin_orders', status='confirmed') }}"
+           class="btn btn-sm {% if current_status == 'confirmed' %}btn-info{% else %}btn-outline-info{% endif %}">Подтверждённые</a>
+        <a href="{{ url_for('admin_orders', status='shipped') }}"
+           class="btn btn-sm {% if current_status == 'shipped' %}btn-primary{% else %}btn-outline-primary{% endif %}">Отправленные</a>
+        <a href="{{ url_for('admin_orders', status='delivered') }}"
+           class="btn btn-sm {% if current_status == 'delivered' %}btn-success{% else %}btn-outline-success{% endif %}">Доставленные</a>
+        <a href="{{ url_for('admin_orders', status='cancelled') }}"
+           class="btn btn-sm {% if current_status == 'cancelled' %}btn-danger{% else %}btn-outline-danger{% endif %}">Отменённые</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Покупатель</th>
+                <th>Сумма</th>
+                <th>Адрес</th>
+                <th>Статус</th>
+                <th>Дата</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders.items %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.customer.username }}</td>
+                <td class="fw-bold">{{ "%.2f"|format(order.total) }} ₽</td>
+                <td>{{ order.address[:30] }}{% if order.address|length > 30 %}...{% endif %}</td>
+                <td>
+                    {% if order.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="badge bg-success">{{ order.status_label }}</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge bg-danger">{{ order.status_label }}</span>
+                    {% else %}
+                        <span class="badge bg-info">{{ order.status_label }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Назад
+</a>
+{% endblock %}

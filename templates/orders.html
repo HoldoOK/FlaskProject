@@ -1,0 +1,56 @@
+<!-- templates/orders.html -->
+{% extends "base.html" %}
+{% block title %}Мои заказы — ShopFlask{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-bag"></i> Мои заказы</h2>
+
+{% if orders %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Дата</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td class="fw-bold">{{ "%.2f"|format(order.total) }} ₽</td>
+                <td>
+                    {% if order.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
+                    {% elif order.status == 'confirmed' %}
+                        <span class="badge bg-info">{{ order.status_label }}</span>
+                    {% elif order.status == 'shipped' %}
+                        <span class="badge bg-primary">{{ order.status_label }}</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="badge bg-success">{{ order.status_label }}</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="badge bg-danger">{{ order.status_label }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                        Подробнее
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-bag-x fs-1 text-muted"></i>
+    <p class="lead text-muted mt-3">У вас пока нет заказов</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Перейти к покупкам</a>
+</div>
+{% endif %}
+{% endblock %}

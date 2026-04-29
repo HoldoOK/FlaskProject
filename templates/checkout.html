@@ -1,0 +1,67 @@
+<!-- templates/checkout.html -->
+{% extends "base.html" %}
+{% block title %}Оформление заказа — ShopFlask{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-credit-card"></i> Оформление заказа</h2>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Данные для доставки</h5>
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.address.label(class="form-label") }}
+                        {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""),
+                           rows=3, placeholder="Город, улица, дом, квартира") }}
+                        {% for error in form.address.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.phone.label(class="form-label") }}
+                        {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""),
+                           placeholder="+7 (999) 123-45-67") }}
+                        {% for error in form.phone.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.comment.label(class="form-label") }}
+                        {{ form.comment(class="form-control", rows=2, placeholder="Пожелания к заказу...") }}
+                    </div>
+
+                    {{ form.submit(class="btn btn-success btn-lg w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Ваш заказ</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for item in items %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ item.product.name }} × {{ item.quantity }}</span>
+                    <span class="fw-bold">{{ "%.2f"|format(item.subtotal) }} ₽</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between fs-5 fw-bold">
+                    <span>Итого:</span>
+                    <span class="text-primary">{{ "%.2f"|format(total) }} ₽</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

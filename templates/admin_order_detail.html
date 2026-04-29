@@ -1,0 +1,71 @@
+<!-- templates/admin_order_detail.html -->
+{% extends "base.html" %}
+{% block title %}Заказ #{{ order.id }} — Админ{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Заказ #{{ order.id }}</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header">Товары</div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ "%.2f"|format(item.price) }} ₽</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ "%.2f"|format(item.subtotal) }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-warning">
+                            <td colspan="3" class="text-end fw-bold">Итого:</td>
+                            <td class="fw-bold">{{ "%.2f"|format(order.total) }} ₽</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">Информация</div>
+            <div class="card-body">
+                <p><strong>Покупатель:</strong> {{ order.customer.username }}</p>
+                <p><strong>Email:</strong> {{ order.customer.email }}</p>
+                <p><strong>Телефон:</strong> {{ order.phone }}</p>
+                <p><strong>Адрес:</strong> {{ order.address }}</p>
+                {% if order.comment %}
+                <p><strong>Комментарий:</strong> {{ order.comment }}</p>
+                {% endif %}
+                <p><strong>Дата:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Изменить статус</div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.status(class="form-select") }}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('admin_orders') }}" class="btn btn-outline-secondary mt-3">
+    <i class="bi bi-arrow-left"></i> К списку заказов
+</a>
+{% endblock %}

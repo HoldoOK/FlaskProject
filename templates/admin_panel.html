@@ -1,0 +1,118 @@
+<!-- templates/admin_panel.html -->
+{% extends "base.html" %}
+{% block title %}Админ-панель — ShopFlask{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-gear"></i> Админ-панель</h2>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-box-seam fs-1"></i>
+                <h3>{{ products_count }}</h3>
+                <p class="mb-0">Товаров</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-1"></i>
+                <h3>{{ users_count }}</h3>
+                <p class="mb-0">Пользователей</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-bag-check fs-1"></i>
+                <h3>{{ orders_count }}</h3>
+                <p class="mb-0">Заказов</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history fs-1"></i>
+                <h3>{{ pending_orders }}</h3>
+                <p class="mb-0">Ожидают</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">Управление</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('add_product') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Добавить товар
+                    </a>
+                    <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-box-seam"></i> Все товары
+                    </a>
+                    <a href="{{ url_for('admin_categories') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-tags"></i> Категории
+                    </a>
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-info">
+                        <i class="bi bi-bag"></i> Заказы
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success">
+                        <i class="bi bi-people"></i> Пользователи
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние заказы -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Последние заказы</span>
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-sm btn-outline-primary">Все заказы</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Покупатель</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr onclick="location.href='{{ url_for('admin_order_detail', order_id=order.id) }}'"
+                    style="cursor: pointer;">
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.customer.username }}</td>
+                    <td>{{ "%.2f"|format(order.total) }} ₽</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
+                        {% elif order.status == 'delivered' %}
+                            <span class="badge bg-success">{{ order.status_label }}</span>
+                        {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">{{ order.status_label }}</span>
+                        {% else %}
+                            <span class="badge bg-info">{{ order.status_label }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

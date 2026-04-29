@@ -1,0 +1,164 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+{% block title %}Каталог — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Сайдбар с категориями -->
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-list"></i> Категории
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('index') }}"
+                   class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
+                    Все товары
+                </a>
+                {% for cat in all_categories %}
+                <a href="{{ url_for('index', category=cat.id) }}"
+                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
+                          {% if current_category == cat.id %}active{% endif %}">
+                    {{ cat.name }}
+                    <span class="badge bg-primary rounded-pill">{{ cat.products.filter_by(is_active=True).count() }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Сортировка -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-sort-down"></i> Сортировка
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('index', sort='new', category=current_category, search=search) }}"
+                   class="list-group-item list-group-item-action {% if current_sort == 'new' %}active{% endif %}">
+                   Новинки
+                </a>
+                <a href="{{ url_for('index', sort='price_asc', category=current_category, search=search) }}"
+                   class="list-group-item list-group-item-action {% if current_sort == 'price_asc' %}active{% endif %}">
+                   Цена ↑
+                </a>
+                <a href="{{ url_for('index', sort='price_desc', category=current_category, search=search) }}"
+                   class="list-group-item list-group-item-action {% if current_sort == 'price_desc' %}active{% endif %}">
+                   Цена ↓
+                </a>
+                <a href="{{ url_for('index', sort='name', category=current_category, search=search) }}"
+                   class="list-group-item list-group-item-action {% if current_sort == 'name' %}active{% endif %}">
+                   По названию
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список товаров -->
+    <div class="col-lg-9">
+        {% if search %}
+            <h4 class="mb-3">Результаты поиска: «{{ search }}»</h4>
+        {% endif %}
+
+        {% if products.items %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            {% for product in products.items %}
+            <div class="col">
+                <div class="card h-100 product-card shadow-sm">
+                    {% if product.discount_percent > 0 %}
+                    <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                        -{{ product.discount_percent }}%
+                    </span>
+                    {% endif %}
+
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}">
+                        <img src="{{ url_for('static', filename='uploads/' + product.image) }}"
+                             class="card-img-top product-img" alt="{{ product.name }}"
+                             onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    </a>
+
+                    <div class="card-body d-flex flex-column">
+                        {% if product.category %}
+                        <small class="text-muted">{{ product.category.name }}</small>
+                        {% endif %}
+
+                        <h6 class="card-title">
+                            <a href="{{ url_for('product_detail', product_id=product.id) }}"
+                               class="text-decoration-none text-dark">
+                                {{ product.name }}
+                            </a>
+                        </h6>
+
+                        <div class="mt-auto">
+                            <div class="mb-2">
+                                <span class="fs-5 fw-bold text-primary">{{ "%.2f"|format(product.price) }} ₽</span>
+                                {% if product.old_price %}
+                                <small class="text-muted text-decoration-line-through ms-1">
+                                    {{ "%.2f"|format(product.old_price) }} ₽
+                                </small>
+                                {% endif %}
+                            </div>
+
+                            {% if product.is_in_stock %}
+                                <span class="badge bg-success mb-2">В наличии ({{ product.stock }})</span>
+                            {% else %}
+                                <span class="badge bg-secondary mb-2">Нет в наличии</span>
+                            {% endif %}
+
+                            {% if current_user.is_authenticated and product.is_in_stock %}
+                            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-cart-plus"></i> В корзину
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if products.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if products.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('index', page=products.prev_num, category=current_category, search=search, sort=current_sort) }}">
+                        &laquo; Назад
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == products.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('index', page=page_num, category=current_category, search=search, sort=current_sort) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('index', page=products.next_num, category=current_category, search=search, sort=current_sort) }}">
+                        Вперёд &raquo;
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <p class="lead text-muted mt-3">Товары не найдены</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Смотреть все товары</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

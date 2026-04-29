@@ -1,0 +1,100 @@
+/* static/css/style.css */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f9fa;
+}
+
+main {
+    flex: 1;
+}
+
+/* Карточки товаров */
+.product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.product-img {
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 1px solid #eee;
+}
+
+/* Навигация */
+.navbar-brand {
+    font-size: 1.4rem;
+}
+
+/* Бейджи скидок */
+.badge.position-absolute {
+    font-size: 0.85rem;
+    z-index: 2;
+}
+
+/* Кнопки */
+.btn-primary {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    border-color: #3a56d4;
+}
+
+/* Футер */
+footer {
+    margin-top: auto;
+}
+
+/* Админ-панель — карточки статистики */
+.card.bg-primary,
+.card.bg-success,
+.card.bg-info,
+.card.bg-warning {
+    transition: transform 0.2s;
+}
+
+.card.bg-primary:hover,
+.card.bg-success:hover,
+.card.bg-info:hover,
+.card.bg-warning:hover {
+    transform: scale(1.05);
+}
+
+/* Таблицы */
+.table th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Форма поиска */
+.navbar .form-control:focus {
+    box-shadow: none;
+    border-color: #fff;
+}
+
+/* Сайдбар */
+.list-group-item.active {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .product-img {
+        height: 180px;
+    }
+
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
