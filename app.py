@@ -1,4 +1,5 @@
 # app.py
+from datetime import datetime, timedelta, timezone
 import os
 import uuid
 from functools import wraps
@@ -22,7 +23,6 @@ db.init_app(app)
 migrate = Migrate(app, db)
 from api import api_bp
 app.register_blueprint(api_bp)
-
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите в аккаунт'
@@ -33,6 +33,16 @@ login_manager.login_message_category = 'warning'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+MOSCOW_OFFSET = timezone(timedelta(hours=3))
+
+
+@app.template_filter('moscow_time')
+def moscow_time_filter(dt, fmt='%d.%m.%Y %H:%M'):
+    """Конвертирует UTC время в московское (GMT+3)"""
+    if dt is None:
+        return ''
+    return (dt + timedelta(hours=3)).strftime(fmt)
 
 # ============ УТИЛИТЫ ============
 
@@ -295,7 +305,6 @@ def checkout():
         db.session.add(order)
 
         for item in items:
-            # Проверяем наличие
             if item.product.stock < item.quantity:
                 flash(f'Недостаточно товара "{item.product.name}" на складе', 'danger')
                 return redirect(url_for('cart'))
@@ -303,15 +312,13 @@ def checkout():
             order_item = OrderItem(
                 order=order,
                 product_id=item.product_id,
+                product_name=item.product.name,  # <-- сохраняем название
                 quantity=item.quantity,
                 price=item.product.price
             )
             db.session.add(order_item)
-
-            # Уменьшаем остаток на складе
             item.product.stock -= item.quantity
 
-        # Очищаем корзину
         CartItem.query.filter_by(user_id=current_user.id).delete()
         db.session.commit()
 
@@ -458,6 +465,9 @@ def delete_product(product_id):
         old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], product.image)
         if os.path.exists(old_path):
             os.remove(old_path)
+
+    # Обнуляем product_id в существующих заказах (товар удалён, но история остаётся)
+    OrderItem.query.filter_by(product_id=product_id).update({'product_id': None})
 
     db.session.delete(product)
     db.session.commit()

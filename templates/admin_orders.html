@@ -54,7 +54,7 @@
                         <span class="badge bg-info">{{ order.status_label }}</span>
                     {% endif %}
                 </td>
-                <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td>{{ order.created_at | moscow_time }}</td>
                 <td>
                     <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-eye"></i>

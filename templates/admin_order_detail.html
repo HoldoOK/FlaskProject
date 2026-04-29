@@ -17,7 +17,17 @@
                     <tbody>
                         {% for item in order.items %}
                         <tr>
-                            <td>{{ item.product.name }}</td>
+                            <td>
+                                {% if item.product %}
+                                    <a href="{{ url_for('product_detail', product_id=item.product_id) }}">
+                                        {{ item.display_name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="bi bi-x-circle"></i> {{ item.display_name }}
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td>{{ "%.2f"|format(item.price) }} ₽</td>
                             <td>{{ item.quantity }}</td>
                             <td>{{ "%.2f"|format(item.subtotal) }} ₽</td>
@@ -46,7 +56,7 @@
                 {% if order.comment %}
                 <p><strong>Комментарий:</strong> {{ order.comment }}</p>
                 {% endif %}
-                <p><strong>Дата:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><strong>Дата:</strong> {{ order.created_at | moscow_time }}</p>
             </div>
         </div>
 

@@ -58,6 +58,7 @@ class Category(db.Model):
         return f'<Category {self.name}>'
 
 
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, index=True)
@@ -74,6 +75,8 @@ class Product(db.Model):
 
     cart_entries = db.relationship('CartItem', backref='product', lazy='dynamic',
                                    cascade='all, delete-orphan')
+
+    # ===== ИСПРАВЛЕНО: убран cascade, product_id станет NULL при удалении =====
     order_items = db.relationship('OrderItem', backref='product', lazy='dynamic')
 
     @property
@@ -134,13 +137,28 @@ class Order(db.Model):
         return f'<Order {self.id}>'
 
 
+# models.py — класс OrderItem
+
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+
+    # ===== ИСПРАВЛЕНО: nullable=True — товар может быть удалён =====
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=True)
+
+    # ===== ДОБАВЛЕНО: сохраняем название на момент заказа =====
+    product_name = db.Column(db.String(200), nullable=False, default='Товар удалён')
+
     quantity = db.Column(db.Integer, nullable=False)
-    price = db.Column(db.Float, nullable=False)  # цена на момент заказа
+    price = db.Column(db.Float, nullable=False)
 
     @property
     def subtotal(self):
         return self.price * self.quantity
+
+    @property
+    def display_name(self):
+        """Возвращает название товара или сохранённое имя если товар удалён"""
+        if self.product:
+            return self.product.name
+        return self.product_name

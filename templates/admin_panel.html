@@ -108,7 +108,7 @@
                             <span class="badge bg-info">{{ order.status_label }}</span>
                         {% endif %}
                     </td>
-                    <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>{{ order.created_at | moscow_time }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

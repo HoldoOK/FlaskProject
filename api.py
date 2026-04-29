@@ -3,6 +3,13 @@ from functools import wraps
 from flask import request, jsonify, Blueprint
 from flask_restful import Api, Resource
 from models import db, Order, OrderItem, User
+from datetime import timedelta
+
+
+def to_moscow(dt):
+    if dt is None:
+        return None
+    return (dt + timedelta(hours=3)).isoformat()
 
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 api = Api(api_bp)
@@ -76,7 +83,6 @@ def serialize_order_item(item):
 
 
 def serialize_order(order, detailed=False):
-    """Преобразует Order в словарь"""
     data = {
         'id': order.id,
         'user_id': order.user_id,
@@ -84,8 +90,8 @@ def serialize_order(order, detailed=False):
         'status': order.status,
         'status_label': order.status_label,
         'total': order.total,
-        'created_at': order.created_at.isoformat(),
-        'updated_at': order.updated_at.isoformat() if order.updated_at else None,
+        'created_at': to_moscow(order.created_at),
+        'updated_at': to_moscow(order.updated_at),
     }
 
     if detailed:

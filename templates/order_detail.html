@@ -23,9 +23,16 @@
                         {% for item in order.items %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('product_detail', product_id=item.product_id) }}">
-                                    {{ item.product.name }}
-                                </a>
+                                {% if item.product %}
+                                    <a href="{{ url_for('product_detail', product_id=item.product_id) }}">
+                                        {{ item.display_name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="bi bi-x-circle"></i> {{ item.display_name }}
+                                        <small>(товар удалён)</small>
+                                    </span>
+                                {% endif %}
                             </td>
                             <td>{{ "%.2f"|format(item.price) }} ₽</td>
                             <td>{{ item.quantity }}</td>
@@ -48,7 +55,7 @@
         <div class="card">
             <div class="card-header">Информация о заказе</div>
             <div class="card-body">
-                <p><strong>Дата:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                <p><strong>Дата:</strong> {{ order.created_at | moscow_time }}</p>
                 <p><strong>Статус:</strong>
                     {% if order.status == 'pending' %}
                         <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
