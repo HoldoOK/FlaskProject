@@ -1,4 +1,3 @@
-# api_routes.py
 from functools import wraps
 from flask import request, jsonify, Blueprint
 from flask_restful import Api, Resource
@@ -11,16 +10,14 @@ def to_moscow(dt):
         return None
     return (dt + timedelta(hours=3)).isoformat()
 
+
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 api = Api(api_bp)
 
-# ============ АУТЕНТИФИКАЦИЯ API ============
-
-API_TOKENS = {}  # user_id -> token (в продакшене использовать Redis/БД)
+API_TOKENS = {}  # user_id -> token
 
 
 def generate_token(user):
-    """Генерирует токен для пользователя"""
     import uuid
     token = uuid.uuid4().hex
     API_TOKENS[token] = user.id
@@ -28,7 +25,6 @@ def generate_token(user):
 
 
 def get_current_api_user():
-    """Получает пользователя по токену из заголовка Authorization"""
     auth_header = request.headers.get('Authorization', '')
 
     if auth_header.startswith('Bearer '):
@@ -45,18 +41,18 @@ def get_current_api_user():
 
 
 def api_login_required(f):
-    """Декоратор: требуется аутентификация"""
     @wraps(f)
     def decorated(*args, **kwargs):
         user = get_current_api_user()
         if not user:
-            return {'error': 'Требуется аутентификация', 'message': 'Передайте токен в заголовке Authorization: Bearer <token>'}, 401
+            return {'error': 'Требуется аутентификация',
+                    'message': 'Передайте токен в заголовке Authorization: Bearer <token>'}, 401
         return f(*args, **kwargs)
+
     return decorated
 
 
 def api_admin_required(f):
-    """Декоратор: требуются права администратора"""
     @wraps(f)
     def decorated(*args, **kwargs):
         user = get_current_api_user()
@@ -65,13 +61,11 @@ def api_admin_required(f):
         if not user.is_admin:
             return {'error': 'Доступ запрещён', 'message': 'Требуются права администратора'}, 403
         return f(*args, **kwargs)
+
     return decorated
 
 
-# ============ СЕРИАЛИЗАЦИЯ ============
-
 def serialize_order_item(item):
-    """Преобразует OrderItem в словарь"""
     return {
         'id': item.id,
         'product_id': item.product_id,
@@ -107,10 +101,6 @@ def serialize_order(order, detailed=False):
 # ============ РЕСУРСЫ API ============
 
 class AuthTokenResource(Resource):
-    """
-    POST /api/v1/auth/token
-    Получение токена по email и паролю
-    """
     def post(self):
         data = request.get_json()
 
@@ -142,9 +132,6 @@ class AuthTokenResource(Resource):
 
 
 class OrderListResource(Resource):
-    """
-    GET /api/v1/orders — список всех заказов (админ: все, пользователь: свои)
-    """
     @api_login_required
     def get(self):
         user = get_current_api_user()
@@ -156,13 +143,11 @@ class OrderListResource(Resource):
         status = request.args.get('status', type=str)
         sort = request.args.get('sort', 'desc', type=str)  # asc / desc
 
-        # Админ видит все заказы, пользователь — только свои
         if user.is_admin:
             query = Order.query
         else:
             query = Order.query.filter_by(user_id=user.id)
 
-        # Фильтр по статусу
         if status:
             valid_statuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
             if status not in valid_statuses:
@@ -171,13 +156,11 @@ class OrderListResource(Resource):
                 }, 400
             query = query.filter_by(status=status)
 
-        # Сортировка
         if sort == 'asc':
             query = query.order_by(Order.created_at.asc())
         else:
             query = query.order_by(Order.created_at.desc())
 
-        # Пагинация
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
         return {
@@ -196,10 +179,6 @@ class OrderListResource(Resource):
 
 
 class OrderDetailResource(Resource):
-    """
-    GET    /api/v1/orders/<id> — детали заказа
-    PATCH  /api/v1/orders/<id> — обновить статус (только админ)
-    """
     @api_login_required
     def get(self, order_id):
         user = get_current_api_user()
@@ -208,7 +187,6 @@ class OrderDetailResource(Resource):
         if not order:
             return {'error': f'Заказ #{order_id} не найден'}, 404
 
-        # Пользователь может видеть только свои заказы
         if not user.is_admin and order.user_id != user.id:
             return {'error': 'Доступ запрещён'}, 403
 
@@ -216,7 +194,6 @@ class OrderDetailResource(Resource):
 
     @api_admin_required
     def patch(self, order_id):
-        """Обновление статуса заказа (только для админа)"""
         order = Order.query.get(order_id)
 
         if not order:
@@ -248,9 +225,7 @@ class OrderDetailResource(Resource):
 
 
 class OrderStatsResource(Resource):
-    """
-    GET /api/v1/orders/stats — статистика по заказам (только админ)
-    """
+
     @api_admin_required
     def get(self):
         from sqlalchemy import func
@@ -277,8 +252,6 @@ class OrderStatsResource(Resource):
             }
         }, 200
 
-
-# ============ РЕГИСТРАЦИЯ МАРШРУТОВ ============
 
 api.add_resource(AuthTokenResource, '/auth/token')
 api.add_resource(OrderListResource, '/orders')

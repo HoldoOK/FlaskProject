@@ -1,4 +1,3 @@
-# config.py
 import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -15,7 +14,6 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-    # Fixes CSRF with reverse proxies like localhost.run
     WTF_CSRF_SSL_STRICT = False
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'

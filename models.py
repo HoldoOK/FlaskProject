@@ -1,4 +1,3 @@
-# models.py
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
@@ -6,13 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-
-# Таблица связи корзины (many-to-many)
 cart_items = db.Table('cart_items',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True),
-    db.Column('quantity', db.Integer, default=1)
-)
+                      db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+                      db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True),
+                      db.Column('quantity', db.Integer, default=1)
+                      )
 
 
 class User(UserMixin, db.Model):
@@ -58,7 +55,6 @@ class Category(db.Model):
         return f'<Category {self.name}>'
 
 
-
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, index=True)
@@ -76,7 +72,6 @@ class Product(db.Model):
     cart_entries = db.relationship('CartItem', backref='product', lazy='dynamic',
                                    cascade='all, delete-orphan')
 
-    # ===== ИСПРАВЛЕНО: убран cascade, product_id станет NULL при удалении =====
     order_items = db.relationship('OrderItem', backref='product', lazy='dynamic')
 
     @property
@@ -110,7 +105,7 @@ class CartItem(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending, confirmed, shipped, delivered, cancelled
+    status = db.Column(db.String(20), default='pending')
     total = db.Column(db.Float, nullable=False)
     address = db.Column(db.Text, nullable=False)
     phone = db.Column(db.String(20), nullable=False)
@@ -143,10 +138,8 @@ class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
 
-    # ===== ИСПРАВЛЕНО: nullable=True — товар может быть удалён =====
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=True)
 
-    # ===== ДОБАВЛЕНО: сохраняем название на момент заказа =====
     product_name = db.Column(db.String(200), nullable=False, default='Товар удалён')
 
     quantity = db.Column(db.Integer, nullable=False)
@@ -158,7 +151,6 @@ class OrderItem(db.Model):
 
     @property
     def display_name(self):
-        """Возвращает название товара или сохранённое имя если товар удалён"""
         if self.product:
             return self.product.name
         return self.product_name

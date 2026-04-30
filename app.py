@@ -1,4 +1,3 @@
-# app.py
 from datetime import datetime, timedelta, timezone
 import os
 import uuid
@@ -6,7 +5,7 @@ from functools import wraps
 from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, current_app)
 from flask_login import (LoginManager, login_user, logout_user,
-                          login_required, current_user)
+                         login_required, current_user)
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
@@ -23,6 +22,7 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 from api_routes import api_bp
+
 app.register_blueprint(api_bp)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -40,31 +40,27 @@ MOSCOW_OFFSET = timezone(timedelta(hours=3))
 
 @app.template_filter('moscow_time')
 def moscow_time_filter(dt, fmt='%d.%m.%Y %H:%M'):
-    """Конвертирует UTC время в московское (GMT+3)"""
     if dt is None:
         return ''
     return (dt + timedelta(hours=3)).strftime(fmt)
 
-# ============ УТИЛИТЫ ============
 
 def admin_required(f):
-    """Декоратор для проверки прав администратора"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:
             abort(403)
         return f(*args, **kwargs)
+
     return decorated_function
 
 
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+        filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
 def save_image(file):
-    """Сохраняет загруженное изображение и возвращает имя файла"""
-    # Проверяем, что file является объектом файла, а не строкой
     if not isinstance(file, FileStorage):
         return None
 
@@ -78,11 +74,8 @@ def save_image(file):
     return None
 
 
-# ============ КОНТЕКСТ ============
-
 @app.context_processor
 def inject_cart_count():
-    """Добавляет количество товаров в корзине во все шаблоны"""
     if current_user.is_authenticated:
         return {'cart_count': current_user.get_cart_count()}
     return {'cart_count': 0}
@@ -90,12 +83,9 @@ def inject_cart_count():
 
 @app.context_processor
 def inject_categories():
-    """Добавляет категории во все шаблоны"""
     categories = Category.query.all()
     return {'all_categories': categories}
 
-
-# ============ ОБРАБОТЧИКИ ОШИБОК ============
 
 @app.errorhandler(404)
 def not_found(error):
@@ -106,8 +96,6 @@ def not_found(error):
 def forbidden(error):
     return render_template('base.html', error_code=403, error_message='Доступ запрещён'), 403
 
-
-# ============ ГЛАВНАЯ СТРАНИЦА ============
 
 @app.route('/')
 def index():
@@ -127,7 +115,6 @@ def index():
             Product.description.ilike(f'%{search}%')
         )
 
-    # Сортировка
     if sort == 'price_asc':
         query = query.order_by(Product.price.asc())
     elif sort == 'price_desc':
@@ -145,8 +132,6 @@ def index():
                            current_category=category_id,
                            current_sort=sort)
 
-
-# ============ АУТЕНТИФИКАЦИЯ ============
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -196,8 +181,6 @@ def logout():
     return redirect(url_for('index'))
 
 
-# ============ ТОВАРЫ ============
-
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
@@ -205,8 +188,6 @@ def product_detail(product_id):
         abort(404)
     return render_template('product.html', product=product)
 
-
-# ============ КОРЗИНА ============
 
 @app.route('/cart')
 @login_required
@@ -282,8 +263,6 @@ def remove_from_cart(item_id):
     return redirect(url_for('cart'))
 
 
-# ============ ОФОРМЛЕНИЕ ЗАКАЗА ============
-
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
@@ -330,8 +309,6 @@ def checkout():
     return render_template('checkout.html', form=form, items=items, total=total)
 
 
-# ============ ЗАКАЗЫ ПОЛЬЗОВАТЕЛЯ ============
-
 @app.route('/orders')
 @login_required
 def my_orders():
@@ -347,8 +324,6 @@ def order_detail(order_id):
         abort(403)
     return render_template('order_detail.html', order=order)
 
-
-# ============ АДМИН-ПАНЕЛЬ ============
 
 @app.route('/admin')
 @login_required
@@ -369,8 +344,6 @@ def admin_panel():
                            recent_orders=recent_orders)
 
 
-# --- Управление товарами ---
-
 @app.route('/admin/products')
 @login_required
 @admin_required
@@ -388,7 +361,7 @@ def admin_products():
 def add_product():
     form = ProductForm()
     form.category_id.choices = [(0, '-- Без категории --')] + \
-        [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
+                               [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
 
     if form.validate_on_submit():
         product = Product(
@@ -421,7 +394,7 @@ def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
     form = ProductForm(obj=product)
     form.category_id.choices = [(0, '-- Без категории --')] + \
-        [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
+                               [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
 
     if form.validate_on_submit():
         product.name = form.name.data
@@ -431,11 +404,8 @@ def edit_product(product_id):
         product.stock = form.stock.data
         product.category_id = form.category_id.data if form.category_id.data != 0 else None
         product.is_active = form.is_active.data
-
-        # Сохраняем новое изображение только если оно было загружено
         new_image = save_image(form.image.data)
-        if new_image:  # None если файл не выбран — оставляем старое
-            # Удаляем старое изображение
+        if new_image:
             if product.image and product.image != 'default.jpg':
                 old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], product.image)
                 if os.path.exists(old_path):
@@ -446,7 +416,6 @@ def edit_product(product_id):
         flash(f'Товар "{product.name}" обновлён!', 'success')
         return redirect(url_for('admin_products'))
 
-    # При GET-запросе устанавливаем текущую категорию
     if product.category_id:
         form.category_id.data = product.category_id
     else:
@@ -454,6 +423,7 @@ def edit_product(product_id):
 
     return render_template('add_product.html', form=form,
                            title='Редактировать товар', product=product)
+
 
 @app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
 @login_required
@@ -467,7 +437,6 @@ def delete_product(product_id):
         if os.path.exists(old_path):
             os.remove(old_path)
 
-    # Обнуляем product_id в существующих заказах (товар удалён, но история остаётся)
     OrderItem.query.filter_by(product_id=product_id).update({'product_id': None})
 
     db.session.delete(product)
@@ -475,8 +444,6 @@ def delete_product(product_id):
     flash(f'Товар "{product.name}" удалён', 'info')
     return redirect(url_for('admin_products'))
 
-
-# --- Управление категориями ---
 
 @app.route('/admin/categories')
 @login_required
@@ -505,15 +472,12 @@ def add_category():
 @admin_required
 def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
-    # Убираем категорию у товаров
     Product.query.filter_by(category_id=category_id).update({'category_id': None})
     db.session.delete(category)
     db.session.commit()
     flash(f'Категория "{category.name}" удалена', 'info')
     return redirect(url_for('admin_categories'))
 
-
-# --- Управление заказами ---
 
 @app.route('/admin/orders')
 @login_required
@@ -546,8 +510,6 @@ def admin_order_detail(order_id):
     return render_template('admin_order_detail.html', order=order, form=form)
 
 
-# --- Управление пользователями ---
-
 @app.route('/admin/users')
 @login_required
 @admin_required
@@ -571,10 +533,7 @@ def toggle_admin(user_id):
     return redirect(url_for('admin_users'))
 
 
-# ============ СОЗДАНИЕ БД И ЗАПУСК ============
-
 def create_tables():
-    """Создание таблиц и данных по умолчанию"""
     with app.app_context():
         db.create_all()
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -584,7 +543,7 @@ def create_tables():
 if __name__ == '__main__':
     create_tables()
     app.run(
-        host='0.0.0.0',  # важно — слушаем все интерфейсы
+        host='0.0.0.0',
         port=8080,
-        debug=False       # debug=False для публичного доступа
+        debug=False
     )
