@@ -10,18 +10,19 @@ from flask_login import (LoginManager, login_user, logout_user,
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
-
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from models import db, User, Product, Category, CartItem, Order, OrderItem
 from forms import (RegistrationForm, LoginForm, ProductForm, CategoryForm,
                    CheckoutForm, OrderStatusForm)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config.from_object(Config)
 
 db.init_app(app)
 migrate = Migrate(app, db)
-from api import api_bp
+from api_routes import api_bp
 app.register_blueprint(api_bp)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -582,4 +583,8 @@ def create_tables():
 
 if __name__ == '__main__':
     create_tables()
-    app.run(debug=True)
+    app.run(
+        host='0.0.0.0',  # важно — слушаем все интерфейсы
+        port=8080,
+        debug=False       # debug=False для публичного доступа
+    )

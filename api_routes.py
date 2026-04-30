@@ -1,4 +1,4 @@
-# api.py
+# api_routes.py
 from functools import wraps
 from flask import request, jsonify, Blueprint
 from flask_restful import Api, Resource

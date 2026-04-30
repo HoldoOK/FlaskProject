@@ -274,3 +274,22 @@ footer a:hover {
         font-size: 1.1rem;
     }
 }
+
+/* ============ ССЫЛКИ НА ТОВАРЫ ============ */
+
+.product-link {
+    color: #212529;
+    transition: color 0.2s ease;
+}
+
+.product-link:hover {
+    color: #4361ee;
+}
+
+[data-bs-theme="dark"] .product-link {
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .product-link:hover {
+    color: #6ea8fe;
+}
