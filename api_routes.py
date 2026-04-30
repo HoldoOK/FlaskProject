@@ -235,7 +235,6 @@ class OrderStatsResource(Resource):
             Order.status != 'cancelled'
         ).scalar() or 0
 
-        # Количество по статусам
         status_counts = {}
         for status, label in Order.STATUS_LABELS.items():
             count = Order.query.filter_by(status=status).count()
