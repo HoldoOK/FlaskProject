@@ -7,9 +7,10 @@ from functools import wraps
 from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, current_app, jsonify)
 from flask_login import (LoginManager, login_user, logout_user,
-                          login_required, current_user)
+                         login_required, current_user)
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import FileStorage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import func, extract
@@ -27,6 +28,7 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 from api_routes import api_bp
+
 app.register_blueprint(api_bp)
 
 login_manager = LoginManager(app)
@@ -49,46 +51,63 @@ def moscow_time_filter(dt, fmt='%d.%m.%Y %H:%M'):
     return (dt + timedelta(hours=3)).strftime(fmt)
 
 
-
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:
             abort(403)
         return f(*args, **kwargs)
+
     return decorated_function
 
 
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+        filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
 def save_image(file):
     if not isinstance(file, FileStorage):
         return None
-    if file and file.filename and allowed_file(file.filename):
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"{uuid.uuid4().hex}.{ext}"
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
-        file.save(filepath)
-        return filename
-    return None
+
+    if not file or not file.filename:
+        return None
+
+    if not allowed_file(file.filename):
+        return None
+
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+
+    max_size = current_app.config.get('MAX_SINGLE_FILE_SIZE', 10 * 1024 * 1024)
+    if size > max_size:
+        return None
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
+    file.save(filepath)
+    return filename
 
 
 def save_multiple_images(files):
-    """Сохраняет несколько файлов, возвращает список имён"""
     filenames = []
+    skipped = 0
+    max_size = current_app.config.get('MAX_SINGLE_FILE_SIZE', 10 * 1024 * 1024)
+
     for file in files:
         filename = save_image(file)
         if filename:
             filenames.append(filename)
-    return filenames
+        elif isinstance(file, FileStorage) and file.filename:
+            skipped += 1
+
+    return filenames, skipped
 
 
 def delete_image_file(filename):
-    """Удаляет файл изображения с диска"""
     if filename and filename != 'default.jpg':
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         if os.path.exists(filepath):
@@ -96,7 +115,6 @@ def delete_image_file(filename):
 
 
 def get_revenue_data():
-    """Считает прибыль по месяцам за последний год"""
     now = datetime.utcnow()
     months = []
     revenue = []
@@ -123,7 +141,6 @@ def get_revenue_data():
 
 
 def get_daily_revenue_data():
-    """Считает прибыль по дням за последний месяц"""
     now = datetime.utcnow()
     days = []
     revenue = []
@@ -146,7 +163,6 @@ def get_daily_revenue_data():
 
 
 def get_orders_count_data():
-    """Количество заказов по месяцам"""
     now = datetime.utcnow()
     months = []
     counts = []
@@ -171,7 +187,6 @@ def get_orders_count_data():
     return months, counts
 
 
-
 @app.context_processor
 def inject_cart_count():
     if current_user.is_authenticated:
@@ -185,7 +200,6 @@ def inject_categories():
     return {'all_categories': categories}
 
 
-
 @app.errorhandler(404)
 def not_found(error):
     return render_template('base.html', error_code=404, error_message='Страница не найдена'), 404
@@ -195,6 +209,12 @@ def not_found(error):
 def forbidden(error):
     return render_template('base.html', error_code=403, error_message='Доступ запрещён'), 403
 
+
+@app.errorhandler(413)
+@app.errorhandler(RequestEntityTooLarge)
+def too_large(error):
+    flash(f'Файлы слишком большие! Максимум {app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)} МБ суммарно.', 'danger')
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route('/')
@@ -227,7 +247,6 @@ def index():
 
     return render_template('index.html', products=products, search=search,
                            current_category=category_id, current_sort=sort)
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -271,14 +290,12 @@ def logout():
     return redirect(url_for('index'))
 
 
-
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     if not product.is_active and (not current_user.is_authenticated or not current_user.is_admin):
         abort(404)
     return render_template('product.html', product=product)
-
 
 
 @app.route('/cart')
@@ -344,7 +361,6 @@ def remove_from_cart(item_id):
     return redirect(url_for('cart'))
 
 
-
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
@@ -381,7 +397,6 @@ def checkout():
     return render_template('checkout.html', form=form, items=items, total=total)
 
 
-
 @app.route('/orders')
 @login_required
 def my_orders():
@@ -396,7 +411,6 @@ def order_detail(order_id):
     if order.user_id != current_user.id and not current_user.is_admin:
         abort(403)
     return render_template('order_detail.html', order=order)
-
 
 
 @app.route('/admin')
@@ -452,7 +466,6 @@ def admin_panel():
                            year_revenue=round(float(year_revenue), 2))
 
 
-
 @app.route('/admin/products')
 @login_required
 @admin_required
@@ -469,7 +482,7 @@ def admin_products():
 def add_product():
     form = ProductForm()
     form.category_id.choices = [(0, '-- Без категории --')] + \
-        [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
+                               [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
 
     if form.validate_on_submit():
         product = Product(
@@ -485,7 +498,7 @@ def add_product():
         db.session.flush()
 
         files = request.files.getlist('images')
-        filenames = save_multiple_images(files)
+        filenames, skipped = save_multiple_images(files)
 
         for idx, filename in enumerate(filenames):
             img = ProductImage(
@@ -497,7 +510,15 @@ def add_product():
             db.session.add(img)
 
         db.session.commit()
-        flash(f'Товар "{product.name}" добавлен! Загружено фото: {len(filenames)}', 'success')
+
+        max_mb = current_app.config.get('MAX_SINGLE_FILE_SIZE', 10 * 1024 * 1024) // (1024 * 1024)
+        msg = f'Товар "{product.name}" добавлен! Загружено фото: {len(filenames)}'
+        if skipped > 0:
+            msg += f' (пропущено {skipped} — превышен лимит {max_mb} МБ на файл)'
+            flash(msg, 'warning')
+        else:
+            flash(msg, 'success')
+
         return redirect(url_for('admin_products'))
 
     return render_template('add_product.html', form=form, title='Добавить товар')
@@ -510,7 +531,7 @@ def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
     form = ProductForm(obj=product)
     form.category_id.choices = [(0, '-- Без категории --')] + \
-        [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
+                               [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
 
     if form.validate_on_submit():
         product.name = form.name.data
@@ -522,7 +543,7 @@ def edit_product(product_id):
         product.is_active = form.is_active.data
 
         files = request.files.getlist('images')
-        filenames = save_multiple_images(files)
+        filenames, skipped = save_multiple_images(files)
 
         existing_count = product.images.count()
         has_main = product.images.filter_by(is_main=True).first() is not None
@@ -537,7 +558,17 @@ def edit_product(product_id):
             db.session.add(img)
 
         db.session.commit()
-        flash(f'Товар "{product.name}" обновлён!', 'success')
+
+        max_mb = current_app.config.get('MAX_SINGLE_FILE_SIZE', 10 * 1024 * 1024) // (1024 * 1024)
+        msg = f'Товар "{product.name}" обновлён!'
+        if len(filenames) > 0:
+            msg += f' Загружено фото: {len(filenames)}'
+        if skipped > 0:
+            msg += f' (пропущено {skipped} — превышен лимит {max_mb} МБ на файл)'
+            flash(msg, 'warning')
+        else:
+            flash(msg, 'success')
+
         return redirect(url_for('admin_products'))
 
     if product.category_id:
@@ -566,7 +597,6 @@ def delete_product(product_id):
     return redirect(url_for('admin_products'))
 
 
-
 @app.route('/admin/product/image/delete/<int:image_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -588,7 +618,6 @@ def delete_product_image(image_id):
     return redirect(url_for('edit_product', product_id=product_id))
 
 
-
 @app.route('/admin/product/image/set-main/<int:image_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -601,7 +630,6 @@ def set_main_image(image_id):
     db.session.commit()
     flash('Главное изображение обновлено', 'success')
     return redirect(url_for('edit_product', product_id=img.product_id))
-
 
 
 @app.route('/admin/categories')
@@ -638,7 +666,6 @@ def delete_category(category_id):
     return redirect(url_for('admin_categories'))
 
 
-
 @app.route('/admin/orders')
 @login_required
 @admin_required
@@ -666,7 +693,6 @@ def admin_order_detail(order_id):
     return render_template('admin_order_detail.html', order=order, form=form)
 
 
-
 @app.route('/admin/users')
 @login_required
 @admin_required
@@ -690,7 +716,6 @@ def toggle_admin(user_id):
     return redirect(url_for('admin_users'))
 
 
-
 def create_tables():
     with app.app_context():
         db.create_all()
@@ -701,7 +726,6 @@ def create_tables():
 with app.app_context():
     db.create_all()
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
 
 if __name__ == '__main__':
     create_tables()

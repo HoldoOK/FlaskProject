@@ -71,7 +71,6 @@ class Product(db.Model):
 
     @property
     def main_image(self):
-        """Возвращает главное изображение или заглушку"""
         img = self.images.filter_by(is_main=True).first()
         if not img:
             img = self.images.first()
@@ -79,7 +78,6 @@ class Product(db.Model):
 
     @property
     def all_images(self):
-        """Все изображения товара"""
         return self.images.order_by(ProductImage.sort_order).all()
 
     @property

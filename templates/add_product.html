@@ -53,7 +53,12 @@
                         <div class="mb-3">
                             {{ form.images.label(class="form-label") }}
                             {{ form.images(class="form-control", multiple=True, accept="image/*") }}
-                            <small class="text-muted">Можно выбрать несколько файлов. Первый станет главным.</small>
+                            <small class="text-muted">
+                                Можно выбрать несколько файлов. Первый станет главным.<br>
+                                Максимум <strong>10 МБ</strong> на один файл.
+                                Форматы: JPG, PNG, GIF, WebP.
+                            </small>
+                            <div id="fileSizeInfo" class="mt-1"></div>
                         </div>
 
                         <div id="imagePreview" class="d-flex flex-wrap gap-2 mb-3"></div>
@@ -113,29 +118,57 @@
 
 {% block scripts %}
     <script>
+        var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
         document.querySelector('input[name="images"]').addEventListener('change', function (e) {
             var preview = document.getElementById('imagePreview');
+            var sizeInfo = document.getElementById('fileSizeInfo');
             preview.innerHTML = '';
+
             var files = e.target.files;
+            var totalSize = 0;
+            var skipped = 0;
 
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
+                totalSize += file.size;
+
                 if (!file.type.startsWith('image/')) continue;
 
+                var isTooBig = file.size > MAX_FILE_SIZE;
+                if (isTooBig) skipped++;
+
                 var reader = new FileReader();
-                reader.onload = (function (index) {
+                reader.onload = (function (index, tooBig, fileSize) {
                     return function (e) {
                         var div = document.createElement('div');
                         div.style.position = 'relative';
+
+                        var sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
+                        var borderColor = tooBig ? '#dc3545' : '#dee2e6';
+                        var opacity = tooBig ? '0.5' : '1';
+
                         div.innerHTML =
                             '<img src="' + e.target.result + '" ' +
-                            'style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #dee2e6;">' +
-                            (index === 0 ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" style="font-size:0.65rem;">Главное</span>' : '');
+                            'style="width:100px; height:100px; object-fit:cover; border-radius:8px; ' +
+                            'border:3px solid ' + borderColor + '; opacity:' + opacity + ';">' +
+                            (index === 0 && !tooBig ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" style="font-size:0.6rem;">Главное</span>' : '') +
+                            (tooBig ? '<span class="badge bg-danger position-absolute bottom-0 start-50 translate-middle-x" style="font-size:0.6rem;">Слишком большой</span>' : '') +
+                            '<span class="badge bg-dark position-absolute top-0 end-0 m-1" style="font-size:0.55rem;">' + sizeMB + ' МБ</span>';
+
                         preview.appendChild(div);
                     };
-                })(i);
+                })(i, isTooBig, file.size);
                 reader.readAsDataURL(file);
             }
+
+            var totalMB = (totalSize / (1024 * 1024)).toFixed(1);
+            var html = '<small>Выбрано файлов: <strong>' + files.length + '</strong>, общий размер: <strong>' + totalMB + ' МБ</strong>';
+            if (skipped > 0) {
+                html += ' <span class="text-danger">(' + skipped + ' файл(ов) превышают лимит 10 МБ и будут пропущены)</span>';
+            }
+            html += '</small>';
+            sizeInfo.innerHTML = html;
         });
     </script>
 {% endblock %}

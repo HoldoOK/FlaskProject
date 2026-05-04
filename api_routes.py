@@ -14,7 +14,7 @@ def to_moscow(dt):
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 api = Api(api_bp)
 
-API_TOKENS = {}  # user_id -> token
+API_TOKENS = {}
 
 
 def generate_token(user):
@@ -135,12 +135,11 @@ class OrderListResource(Resource):
     def get(self):
         user = get_current_api_user()
 
-        # Параметры запроса
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
-        per_page = min(per_page, 100)  # максимум 100 на страницу
+        per_page = min(per_page, 100)
         status = request.args.get('status', type=str)
-        sort = request.args.get('sort', 'desc', type=str)  # asc / desc
+        sort = request.args.get('sort', 'desc', type=str)
 
         if user.is_admin:
             query = Order.query
