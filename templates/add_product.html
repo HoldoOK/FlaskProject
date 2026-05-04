@@ -1,82 +1,141 @@
-<!-- templates/add_product.html -->
 {% extends "base.html" %}
 {% block title %}{{ title }} — ShopFlask{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <h2 class="mb-4">{{ title }}</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">{{ title }}</h2>
 
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data" novalidate>
-                    {{ form.hidden_tag() }}
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {{ form.hidden_tag() }}
 
-                    <div class="mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
-                        {% for error in form.name.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control", rows=5) }}
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            {{ form.price.label(class="form-label") }}
-                            {{ form.price(class="form-control" + (" is-invalid" if form.price.errors else ""),
-                               step="0.01") }}
-                            {% for error in form.price.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% for error in form.name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
                         </div>
-                        <div class="col-md-4 mb-3">
-                            {{ form.old_price.label(class="form-label") }}
-                            {{ form.old_price(class="form-control", step="0.01") }}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            {{ form.stock.label(class="form-label") }}
-                            {{ form.stock(class="form-control" + (" is-invalid" if form.stock.errors else "")) }}
-                            {% for error in form.stock.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        {{ form.category_id.label(class="form-label") }}
-                        {{ form.category_id(class="form-select") }}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.image.label(class="form-label") }}
-                        {{ form.image(class="form-control") }}
-                        {% if product and product.image %}
-                        <div class="mt-2">
-                            <small class="text-muted">Текущее изображение:</small><br>
-                            <img src="{{ url_for('static', filename='uploads/' + product.image) }}"
-                                 style="max-height: 100px;" class="rounded mt-1"
-                                 onerror="this.style.display='none'">
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows=5) }}
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.price.label(class="form-label") }}
+                                {{ form.price(class="form-control" + (" is-invalid" if form.price.errors else ""), step="0.01") }}
+                                {% for error in form.price.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.old_price.label(class="form-label") }}
+                                {{ form.old_price(class="form-control", step="0.01") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.stock.label(class="form-label") }}
+                                {{ form.stock(class="form-control" + (" is-invalid" if form.stock.errors else "")) }}
+                                {% for error in form.stock.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category_id.label(class="form-label") }}
+                            {{ form.category_id(class="form-select") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.images.label(class="form-label") }}
+                            {{ form.images(class="form-control", multiple=True, accept="image/*") }}
+                            <small class="text-muted">Можно выбрать несколько файлов. Первый станет главным.</small>
+                        </div>
+
+                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+                        {% if product and product.all_images %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Текущие изображения</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    {% for img in product.all_images %}
+                                        <div class="card" style="width: 150px;">
+                                            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                                                 class="card-img-top" style="height: 120px; object-fit: cover;"
+                                                 onerror="this.src='https://via.placeholder.com/150?text=...'">
+                                            <div class="card-body p-2 text-center">
+                                                {% if img.is_main %}
+                                                    <span class="badge bg-success mb-1">Главное</span>
+                                                {% else %}
+                                                    <form action="{{ url_for('set_main_image', image_id=img.id) }}"
+                                                          method="POST" class="d-inline">
+                                                        <button type="submit"
+                                                                class="btn btn-outline-success btn-sm mb-1"
+                                                                title="Сделать главным">
+                                                            <i class="bi bi-star"></i>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                                <form action="{{ url_for('delete_product_image', image_id=img.id) }}"
+                                                      method="POST" class="d-inline"
+                                                      onsubmit="return confirm('Удалить это изображение?')">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm mb-1"
+                                                            title="Удалить">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         {% endif %}
-                    </div>
 
-                    <div class="mb-3 form-check">
-                        {{ form.is_active(class="form-check-input") }}
-                        {{ form.is_active.label(class="form-check-label") }}
-                    </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        {{ form.submit(class="btn btn-primary") }}
-                        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Отмена</a>
-                    </div>
-                </form>
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.querySelector('input[name="images"]').addEventListener('change', function (e) {
+            var preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            var files = e.target.files;
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+
+                var reader = new FileReader();
+                reader.onload = (function (index) {
+                    return function (e) {
+                        var div = document.createElement('div');
+                        div.style.position = 'relative';
+                        div.innerHTML =
+                            '<img src="' + e.target.result + '" ' +
+                            'style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #dee2e6;">' +
+                            (index === 0 ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" style="font-size:0.65rem;">Главное</span>' : '');
+                        preview.appendChild(div);
+                    };
+                })(i);
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 {% endblock %}

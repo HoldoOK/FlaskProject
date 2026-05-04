@@ -1,87 +1,148 @@
-<!-- templates/admin_panel.html -->
 {% extends "base.html" %}
 {% block title %}Админ-панель — ShopFlask{% endblock %}
 
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-gear"></i> Админ-панель</h2>
+    <h2 class="mb-4"><i class="bi bi-gear"></i> Админ-панель</h2>
 
-<!-- Статистика -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <i class="bi bi-box-seam fs-1"></i>
-                <h3>{{ products_count }}</h3>
-                <p class="mb-0">Товаров</p>
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-box-seam fs-1"></i>
+                    <h3>{{ products_count }}</h3>
+                    <p class="mb-0">Товаров</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
-            <div class="card-body text-center">
-                <i class="bi bi-people fs-1"></i>
-                <h3>{{ users_count }}</h3>
-                <p class="mb-0">Пользователей</p>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-people fs-1"></i>
+                    <h3>{{ users_count }}</h3>
+                    <p class="mb-0">Пользователей</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
-            <div class="card-body text-center">
-                <i class="bi bi-bag-check fs-1"></i>
-                <h3>{{ orders_count }}</h3>
-                <p class="mb-0">Заказов</p>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-bag-check fs-1"></i>
+                    <h3>{{ orders_count }}</h3>
+                    <p class="mb-0">Заказов</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body text-center">
-                <i class="bi bi-clock-history fs-1"></i>
-                <h3>{{ pending_orders }}</h3>
-                <p class="mb-0">Ожидают</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Быстрые действия -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">Управление</div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ url_for('add_product') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Добавить товар
-                    </a>
-                    <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-box-seam"></i> Все товары
-                    </a>
-                    <a href="{{ url_for('admin_categories') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-tags"></i> Категории
-                    </a>
-                    <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-info">
-                        <i class="bi bi-bag"></i> Заказы
-                    </a>
-                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success">
-                        <i class="bi bi-people"></i> Пользователи
-                    </a>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history fs-1"></i>
+                    <h3>{{ pending_orders }}</h3>
+                    <p class="mb-0">Ожидают</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Последние заказы -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Последние заказы</span>
-        <a href="{{ url_for('admin_orders') }}" class="btn btn-sm btn-outline-primary">Все заказы</a>
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Прибыль за текущий месяц</h6>
+                    <h3 class="text-success">{{ "%.2f"|format(current_month_revenue) }} ₽</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Прибыль за прошлый месяц</h6>
+                    <h3 class="text-info">{{ "%.2f"|format(prev_month_revenue) }} ₽</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Прибыль за год</h6>
+                    <h3 class="text-primary">{{ "%.2f"|format(year_revenue) }} ₽</h3>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
+
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-graph-up"></i> Прибыль по месяцам</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyRevenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- График прибыли по дням -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-graph-up-arrow"></i> Прибыль за 30 дней</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyRevenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i> Количество заказов по месяцам
+                </div>
+                <div class="card-body">
+                    <canvas id="ordersCountChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">Управление</div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('add_product') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Добавить товар
+                        </a>
+                        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-seam"></i> Все товары
+                        </a>
+                        <a href="{{ url_for('admin_categories') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-tags"></i> Категории
+                        </a>
+                        <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-info">
+                            <i class="bi bi-bag"></i> Заказы
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-success">
+                            <i class="bi bi-people"></i> Пользователи
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Последние заказы</span>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-sm btn-outline-primary">Все заказы</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
                 <tr>
                     <th>#</th>
                     <th>Покупатель</th>
@@ -89,30 +150,153 @@
                     <th>Статус</th>
                     <th>Дата</th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 {% for order in recent_orders %}
-                <tr onclick="location.href='{{ url_for('admin_order_detail', order_id=order.id) }}'"
-                    style="cursor: pointer;">
-                    <td>{{ order.id }}</td>
-                    <td>{{ order.customer.username }}</td>
-                    <td>{{ "%.2f"|format(order.total) }} ₽</td>
-                    <td>
-                        {% if order.status == 'pending' %}
-                            <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
-                        {% elif order.status == 'delivered' %}
-                            <span class="badge bg-success">{{ order.status_label }}</span>
-                        {% elif order.status == 'cancelled' %}
-                            <span class="badge bg-danger">{{ order.status_label }}</span>
-                        {% else %}
-                            <span class="badge bg-info">{{ order.status_label }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ order.created_at | moscow_time }}</td>
-                </tr>
+                    <tr onclick="location.href='{{ url_for('admin_order_detail', order_id=order.id) }}'"
+                        style="cursor: pointer;">
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.customer.username }}</td>
+                        <td>{{ "%.2f"|format(order.total) }} ₽</td>
+                        <td>
+                            {% if order.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ order.status_label }}</span>
+                            {% elif order.status == 'delivered' %}
+                                <span class="badge bg-success">{{ order.status_label }}</span>
+                            {% elif order.status == 'cancelled' %}
+                                <span class="badge bg-danger">{{ order.status_label }}</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ order.status_label }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ order.created_at | moscow_time }}</td>
+                    </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        // Определяем цвета на основе темы
+        function getChartColors() {
+            var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            return {
+                text: isDark ? '#dee2e6' : '#495057',
+                grid: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                revenue: isDark ? 'rgba(78, 205, 196, 0.8)' : 'rgba(67, 97, 238, 0.8)',
+                revenueBg: isDark ? 'rgba(78, 205, 196, 0.15)' : 'rgba(67, 97, 238, 0.15)',
+                daily: isDark ? 'rgba(255, 159, 64, 0.8)' : 'rgba(255, 99, 132, 0.8)',
+                dailyBg: isDark ? 'rgba(255, 159, 64, 0.15)' : 'rgba(255, 99, 132, 0.15)',
+                orders: isDark ? 'rgba(78, 205, 196, 0.7)' : 'rgba(54, 162, 235, 0.7)',
+                ordersBorder: isDark ? 'rgba(78, 205, 196, 1)' : 'rgba(54, 162, 235, 1)'
+            };
+        }
+
+        var colors = getChartColors();
+
+        // Данные из Flask
+        var monthlyLabels = {{ monthly_labels|safe }};
+        var monthlyRevenue = {{ monthly_revenue|safe }};
+        var dailyLabels = {{ daily_labels|safe }};
+        var dailyRevenue = {{ daily_revenue|safe }};
+        var ordersLabels = {{ orders_labels|safe }};
+        var ordersCounts = {{ orders_counts|safe }};
+
+        // Общие настройки
+        var commonScales = {
+            x: {
+                ticks: {color: colors.text, maxRotation: 45},
+                grid: {color: colors.grid}
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {color: colors.text},
+                grid: {color: colors.grid}
+            }
+        };
+
+        var commonPlugins = {
+            legend: {
+                labels: {color: colors.text, font: {size: 13}}
+            }
+        };
+
+        var ctx1 = document.getElementById('monthlyRevenueChart').getContext('2d');
+        var monthlyChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Прибыль (₽)',
+                    data: monthlyRevenue,
+                    borderColor: colors.revenue,
+                    backgroundColor: colors.revenueBg,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: commonScales,
+                plugins: commonPlugins
+            }
+        });
+
+        var ctx2 = document.getElementById('dailyRevenueChart').getContext('2d');
+        var dailyChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Прибыль (₽)',
+                    data: dailyRevenue,
+                    borderColor: colors.daily,
+                    backgroundColor: colors.dailyBg,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: commonScales,
+                plugins: commonPlugins
+            }
+        });
+
+        var ctx3 = document.getElementById('ordersCountChart').getContext('2d');
+        var ordersChart = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: ordersLabels,
+                datasets: [{
+                    label: 'Заказов',
+                    data: ordersCounts,
+                    backgroundColor: colors.orders,
+                    borderColor: colors.ordersBorder,
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: commonScales,
+                plugins: commonPlugins
+            }
+        });
+    </script>
 {% endblock %}

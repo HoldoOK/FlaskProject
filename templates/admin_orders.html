@@ -1,11 +1,9 @@
-<!-- templates/admin_orders.html -->
 {% extends "base.html" %}
 {% block title %}Заказы — ShopFlask{% endblock %}
 
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-bag"></i> Управление заказами</h2>
 
-<!-- Фильтр по статусу -->
 <div class="mb-3">
     <div class="btn-group">
         <a href="{{ url_for('admin_orders') }}"

@@ -1,4 +1,3 @@
-<!-- templates/admin_products.html -->
 {% extends "base.html" %}
 {% block title %}Управление товарами — ShopFlask{% endblock %}
 
@@ -29,9 +28,12 @@
             <tr>
                 <td>{{ product.id }}</td>
                 <td>
-                    <img src="{{ url_for('static', filename='uploads/' + product.image) }}"
+                    <img src="{{ url_for('static', filename='uploads/' + product.main_image) }}"
                          style="width: 50px; height: 50px; object-fit: cover;" class="rounded"
                          onerror="this.src='https://via.placeholder.com/50?text=...'">
+                    {% if product.images.count() > 1 %}
+                    <span class="badge bg-secondary">+{{ product.images.count() - 1 }}</span>
+                    {% endif %}
                 </td>
                 <td>
                     <a href="{{ url_for('product_detail', product_id=product.id) }}">
@@ -73,7 +75,6 @@
     </table>
 </div>
 
-<!-- Пагинация -->
 {% if products.pages > 1 %}
 <nav>
     <ul class="pagination justify-content-center">

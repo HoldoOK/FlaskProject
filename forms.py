@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
+from flask_wtf.file import FileAllowed, MultipleFileField
 from wtforms import (StringField, PasswordField, TextAreaField, FloatField,
                      IntegerField, SelectField, BooleanField, SubmitField)
 from wtforms.validators import (DataRequired, Email, EqualTo, Length,
@@ -65,7 +65,7 @@ class ProductForm(FlaskForm):
         NumberRange(min=0, message='Не может быть отрицательным')
     ])
     category_id = SelectField('Категория', coerce=int, validators=[Optional()])
-    image = FileField('Изображение', validators=[
+    images = MultipleFileField('Изображения (можно выбрать несколько)', validators=[
         FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp'], 'Только изображения!')
     ])
     is_active = BooleanField('Активный товар', default=True)

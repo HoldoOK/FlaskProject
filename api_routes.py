@@ -98,7 +98,6 @@ def serialize_order(order, detailed=False):
     return data
 
 
-# ============ РЕСУРСЫ API ============
 
 class AuthTokenResource(Resource):
     def post(self):
