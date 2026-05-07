@@ -1,4 +1,4 @@
-﻿alembic==1.18.4
+alembic==1.18.4
 aniso8601==10.0.1
 blinker==1.9.0
 click==8.3.3
